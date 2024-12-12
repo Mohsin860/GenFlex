@@ -1,24 +1,42 @@
-import logo from './logo.svg';
-import './App.css';
+import React from 'react';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import Header from './components/common/Header';
+import Footer from './components/common/Footer';
+import Home from './pages/Home';
+import Login from './pages/Login';
+import Signup from './pages/Signup';
+import FacultyHome from './pages/FacultyHome';
+import StudentHome from './pages/StudentHome';
+import CreateExam from './components/faculty/CreateExam';
+import EvaluateExam from './components/faculty/EvaluateExam';
+import CreateLecture from './components/faculty/CreateLecture';
+import CreateCodingExam from './components/faculty/CreateCodingExam';
+import TakeExam from './components/student/TakeExam';
+import ProtectedRoute from './components/common/ProtectedRoute';
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Router>
+      <Header />
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+
+        {/* Faculty Routes */}
+        <Route path="/faculty" element={<ProtectedRoute><FacultyHome /></ProtectedRoute>} />
+        <Route path="/faculty/create-exam" element={<ProtectedRoute><CreateExam /></ProtectedRoute>} />
+        <Route path="/faculty/create-coding-exam" element={<ProtectedRoute><CreateCodingExam /></ProtectedRoute>} />
+        <Route path="/faculty/evaluate-exam" element={<ProtectedRoute><EvaluateExam /></ProtectedRoute>} />
+        <Route path="/faculty/create-lecture" element={<ProtectedRoute><CreateLecture /></ProtectedRoute>} />
+
+        {/* Student Routes */}
+        <Route path="/student" element={<ProtectedRoute><StudentHome /></ProtectedRoute>} />
+        <Route path="/student/take-exam" element={<ProtectedRoute><TakeExam /></ProtectedRoute>} />
+      </Routes>
+      <Footer />
+    </Router>
   );
 }
 
