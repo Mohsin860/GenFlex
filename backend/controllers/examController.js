@@ -45,6 +45,8 @@ const generateQuestionsFromPDF = (pdfPath, numQuestions) => {
     });
 };
 
+// Fixed createExam function in examController.js - properly handles duration
+
 const createExam = async (req, res) => {
     try {
         if (!req.file) {
@@ -54,8 +56,30 @@ const createExam = async (req, res) => {
             });
         }
 
+        let userId = null;
+        if (req.user && req.user._id) {
+            userId = req.user._id;
+            console.log(`Using authenticated user ID: ${userId}`);
+        } else {
+            console.log('No authenticated user, proceeding with null user ID');
+        }
+
         const { title } = req.body;
         const numQuestions = parseInt(req.body.numQuestions) || 5;
+        
+        // Parse duration with explicit check for presence and type conversion
+        let duration;
+        if (req.body.duration) {
+            duration = parseInt(req.body.duration);
+            if (isNaN(duration)) {
+                duration = 120; // Default if parsing failed
+            }
+        } else {
+            duration = 120; // Default if not provided
+        }
+        
+        console.log(`Creating exam with duration: ${duration} minutes`);
+        
         const pdfPath = req.file.path;
 
         // Generate questions
@@ -65,12 +89,15 @@ const createExam = async (req, res) => {
         const exam = new Exam({
             title,
             questions,
-            // createdBy: req.user._id  // Uncomment if you have authentication
+            createdBy: userId,
+            isPublished: false,
+            publishedAt: null,
+            duration: duration // Add duration field
         });
         await exam.save();
 
         // Generate initial PDF
-        const pdfFileName = await generateExamPDF(title, questions);
+        const pdfFileName = await generateExamPDF(title, questions, false, duration);
 
         // Clean up uploaded PDF file
         fs.unlink(pdfPath, (err) => {
@@ -102,7 +129,7 @@ const createExam = async (req, res) => {
 
 const updateAndDownload = async (req, res) => {
     try {
-        const { title, questions, content, type, examId } = req.body;
+        const { title, questions, content, type, examId, duration } = req.body;
 
         // Input validation
         if (!title || !questions || !Array.isArray(questions)) {
@@ -124,7 +151,8 @@ const updateAndDownload = async (req, res) => {
             try {
                 await Exam.findByIdAndUpdate(examId, {
                     title,
-                    questions: processedQuestions
+                    questions: processedQuestions,
+                    duration: parseInt(duration) || 120 // Add duration
                 });
             } catch (dbError) {
                 console.error('Error updating exam in database:', dbError);
@@ -162,8 +190,6 @@ const updateAndDownload = async (req, res) => {
         });
     }
 };
-
-
 
 module.exports = {
     createExam,

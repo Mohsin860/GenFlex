@@ -10,6 +10,11 @@ const createLecture = async (req, res) => {
             return res.status(400).json({ message: 'No PDF file uploaded' });
         }
 
+        // Check if user is authenticated
+        if (!req.user || !req.user._id) {
+            return res.status(401).json({ message: 'Authentication required' });
+        }
+
         const { title } = req.body;
         const pdfPath = req.file.path;
 
@@ -24,7 +29,7 @@ const createLecture = async (req, res) => {
             title,
             originalContent: pdfPath,
             summary,
-            faculty: '6573c24e3ea8e1a6a9393a14', // Your placeholder faculty ID
+            faculty: req.user._id, // Use authenticated user's ID
             pdfPath,
             summaryPdfPath: summaryPdfName
         });

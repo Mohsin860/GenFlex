@@ -4,9 +4,23 @@ const fs = require('fs');
 const { generateCodingExamPDF } = require('../utils/codingExamPdfGenerator');
 const CodingExam = require('../models/CodingExam');
 
+// Fixed generateMediumQuestions in codingExamController.js - properly handles duration
+
 const generateCodingQuestions = async (req, res) => {
+    let userId = null;
+    if (req.user && req.user._id) {
+        userId = req.user._id;
+        console.log(`Using authenticated user ID: ${userId}`);
+    } else {
+        console.log('No authenticated user, proceeding with null user ID');
+    }
+
     try {
-        const { prompt, difficulty, title, numQuestions = 5 } = req.body;
+        const { prompt, difficulty, title, numQuestions = 5, duration = 120 } = req.body;
+
+        // Parse duration to ensure it's a number
+        const examDuration = parseInt(duration) || 120;
+        console.log(`Creating coding exam with duration: ${examDuration} minutes`);
 
         if (!prompt || !difficulty) {
             return res.status(400).json({
@@ -63,7 +77,8 @@ const generateCodingQuestions = async (req, res) => {
                     type: 'coding',
                     difficulty,
                     numQuestions: requestedQuestions,
-                    createdBy: req.user ? req.user._id : null
+                    createdBy: userId,
+                    duration: examDuration // Store the duration properly
                 });
                 await exam.save();
 
@@ -91,6 +106,14 @@ const generateCodingQuestions = async (req, res) => {
 };
 
 const generateComplexQuestions = async (req, res) => {
+    let userId = null;
+    if (req.user && req.user._id) {
+        userId = req.user._id;
+        console.log(`Using authenticated user ID: ${userId}`);
+    } else {
+        console.log('No authenticated user, proceeding with null user ID');
+    }
+
     try {
         const { prompt, title, numQuestions = 5 } = req.body;
 
@@ -142,7 +165,7 @@ const generateComplexQuestions = async (req, res) => {
                     type: 'complex',
                     difficulty: 'complex',
                     numQuestions: requestedQuestions,
-                    createdBy: req.user ? req.user._id : null
+                    createdBy: userId
                 });
                 await exam.save();
 
@@ -170,6 +193,14 @@ const generateComplexQuestions = async (req, res) => {
 };
 
 const generateMathQuestions = async (req, res) => {
+    let userId = null;
+    if (req.user && req.user._id) {
+        userId = req.user._id;
+        console.log(`Using authenticated user ID: ${userId}`);
+    } else {
+        console.log('No authenticated user, proceeding with null user ID');
+    }
+
     try {
         const { prompt, title, numQuestions = 5 } = req.body;
 
@@ -228,7 +259,7 @@ const generateMathQuestions = async (req, res) => {
                     type: 'math',
                     difficulty: 'math',
                     numQuestions: requestedQuestions,
-                    createdBy: req.user ? req.user._id : null
+                    createdBy: userId
                 });
                 await exam.save();
 
@@ -257,6 +288,21 @@ const generateMathQuestions = async (req, res) => {
 };
 
 const generateDiverseCodeQuestions = async (req, res) => {
+
+    // Add at the beginning of each exam creation function
+    console.log('AUTH DEBUG - Creating exam with:', {
+        userObject: req.user,
+        userID: req.user?._id,
+        authHeader: req.headers.authorization ? 'Present' : 'Missing'
+    });
+    let userId = null;
+    if (req.user && req.user._id) {
+        userId = req.user._id;
+        console.log(`Using authenticated user ID: ${userId}`);
+    } else {
+        console.log('No authenticated user, proceeding with null user ID');
+    }
+
     try {
         const { prompt, title, numQuestions = 5 } = req.body;
 
@@ -310,7 +356,7 @@ const generateDiverseCodeQuestions = async (req, res) => {
                     type: 'diverse',
                     difficulty: 'diverse',
                     numQuestions: requestedQuestions,
-                    createdBy: req.user ? req.user._id : null
+                    createdBy: userId
                 });
                 await exam.save();
 
@@ -336,9 +382,19 @@ const generateDiverseCodeQuestions = async (req, res) => {
         });
     }
 };
+
 const saveEditedExam = async (req, res) => {
+
+    let userId = null;
+    if (req.user && req.user._id) {
+        userId = req.user._id;
+        console.log(`Using authenticated user ID: ${userId}`);
+    } else {
+        console.log('No authenticated user, proceeding with null user ID');
+    }
+
     try {
-        const { examId, title, questions, editedContent } = req.body;
+        const { examId, title, questions, editedContent, duration } = req.body;
 
         if (!title || !questions || !Array.isArray(questions)) {
             return res.status(400).json({
@@ -355,7 +411,8 @@ const saveEditedExam = async (req, res) => {
                 editedContent,
                 type: 'coding',
                 numQuestions: questions.length,
-                createdBy: req.user ? req.user._id : null
+                createdBy: userId,
+                duration: parseInt(duration) || 120 // Add duration
             });
         } else {
             exam = await CodingExam.findByIdAndUpdate(
@@ -365,7 +422,8 @@ const saveEditedExam = async (req, res) => {
                     questions,
                     editedContent,
                     numQuestions: questions.length,
-                    updatedAt: Date.now()
+                    updatedAt: Date.now(),
+                    duration: parseInt(duration) || 120 // Add duration
                 },
                 { new: true }
             );
@@ -394,9 +452,20 @@ const saveEditedExam = async (req, res) => {
             error: error.message
         });
     }
+
+    // When saving the exam
+    console.log('AUTH DEBUG - Saving exam with createdBy:', userId);
 };
 
 const downloadCodingExam = async (req, res) => {
+    let userId = null;
+    if (req.user && req.user._id) {
+        userId = req.user._id;
+        console.log(`Using authenticated user ID: ${userId}`);
+    } else {
+        console.log('No authenticated user, proceeding with null user ID');
+    }
+
     try {
         const { examId, title, questions } = req.body;
 
@@ -420,7 +489,7 @@ const downloadCodingExam = async (req, res) => {
                 questions,
                 type: 'coding',
                 numQuestions: questions.length,
-                createdBy: req.user ? req.user._id : null
+                createdBy: userId
             });
             await exam.save();
         }
@@ -455,7 +524,7 @@ module.exports = {
     generateCodingQuestions,
     generateComplexQuestions,
     generateMathQuestions,
-    generateDiverseCodeQuestions, // Add this line
+    generateDiverseCodeQuestions,
     saveEditedExam,
     downloadCodingExam
 };

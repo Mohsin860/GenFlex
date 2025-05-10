@@ -1,5 +1,7 @@
 const express = require('express');
 const router = express.Router();
+const Exam = require('../models/Exam'); // Add these imports
+const CodingExam = require('../models/CodingExam');
 
 router.get('/count', async (req, res) => {
   try {

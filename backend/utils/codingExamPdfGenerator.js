@@ -1,10 +1,16 @@
+
+// Fixed generateCodingExamPDF in codingExamPdfGenerator.js - properly handles duration
+
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
 
-const generateCodingExamPDF = (title, questions) => {
+const generateCodingExamPDF = (title, questions, duration = 120) => {
     return new Promise((resolve, reject) => {
         try {
+            // Parse duration as a number
+            duration = parseInt(duration) || 120;
+            
             const doc = new PDFDocument({
                 size: 'A4',
                 margin: 50,
@@ -31,7 +37,7 @@ const generateCodingExamPDF = (title, questions) => {
             doc.moveDown();
             doc.fontSize(12)
                .font('Helvetica')
-               .text('Duration: 2 Hours', { align: 'right' })
+               .text(`Duration: ${formatDuration(duration)}`, { align: 'right' })
                .text('Maximum Marks: 100', { align: 'right' });
 
             // Instructions
@@ -48,7 +54,8 @@ const generateCodingExamPDF = (title, questions) => {
                 'Each question carries equal marks.',
                 'Write clean, efficient code with proper comments.',
                 'Proper indentation and code formatting will be considered for marking.',
-                'Time complexity analysis will be considered in evaluation.'
+                'Time complexity analysis will be considered in evaluation.',
+                `You have ${formatDuration(duration)} to complete this exam. The timer starts when you begin the exam.`
             ];
 
             instructions.forEach((instruction, index) => {
@@ -132,4 +139,20 @@ const generateCodingExamPDF = (title, questions) => {
     });
 };
 
+// Helper function to format duration in minutes to a human-readable format
+function formatDuration(minutes) {
+    if (typeof minutes !== 'number') {
+        minutes = parseInt(minutes) || 120;
+    }
+    
+    if (minutes >= 60) {
+        const hours = Math.floor(minutes / 60);
+        const remainingMinutes = minutes % 60;
+        return `${hours} ${hours === 1 ? 'hour' : 'hours'}${remainingMinutes > 0 ? ` ${remainingMinutes} minutes` : ''}`;
+    } else {
+        return `${minutes} minutes`;
+    }
+}
+
 module.exports = { generateCodingExamPDF };
+

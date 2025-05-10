@@ -4,19 +4,24 @@ import { Box, Heading, SimpleGrid, Stat, StatLabel, StatNumber } from '@chakra-u
 const FacultyDashboard = () => {
   return (
     <Box>
-      <Heading size="md" mb={4}>Dashboard</Heading>
-      <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6} mb={8}>
+      <Heading size="md" mb={4}>Faculty Dashboard</Heading>
+      <SimpleGrid columns={{ base: 1, md: 4 }} spacing={6} mb={8}>
         <Stat>
-          <StatLabel>Question Generation</StatLabel>
-          <StatNumber>Medium & Complex</StatNumber>
+          <StatLabel>Exam Generation</StatLabel>
+          <StatNumber>Standard & Advanced</StatNumber>
         </Stat>
         <Stat>
-          <StatLabel>Lecture Creation</StatLabel>
-          <StatNumber>PDF to Lectures</StatNumber>
+          <StatLabel>Lecture Management</StatLabel>
+          <StatNumber>Compose Lectures</StatNumber>
         </Stat>
         <Stat>
-          <StatLabel>Question Types</StatLabel>
-          <StatNumber>Descriptive , Coding & Mathematical</StatNumber>
+          <StatLabel>Exam Formats</StatLabel>
+          <StatNumber>All Subjects</StatNumber>
+        </Stat>
+        <Stat>
+          <StatLabel>Exam Control</StatLabel>
+          <StatNumber>Manage Exams</StatNumber>
+          
         </Stat>
       </SimpleGrid>
     </Box>
