@@ -34,6 +34,10 @@ import {
     Stack,
     Tooltip
 } from '@chakra-ui/react';
+import { 
+    FaQuestionCircle, 
+    FaShieldAlt
+} from 'react-icons/fa';
 import { getTeacherExams, toggleExamPublish } from '../../services/teacherExamService';
 import { FaSync, FaEdit, FaEye, FaClipboardCheck, FaDownload, FaClock } from 'react-icons/fa';
 import { SearchIcon } from '@chakra-ui/icons';
@@ -85,19 +89,19 @@ const ManageExams = () => {
 
     const filterExams = () => {
         let result = [...exams];
-        
+
         // Apply search filter
         if (searchTerm) {
-            result = result.filter(exam => 
+            result = result.filter(exam =>
                 exam.title.toLowerCase().includes(searchTerm.toLowerCase())
             );
         }
-        
+
         // Apply type filter
         if (filterType !== 'all') {
             result = result.filter(exam => exam.type.toLowerCase() === filterType.toLowerCase());
         }
-        
+
         setFilteredExams(result);
     };
 
@@ -173,28 +177,26 @@ const ManageExams = () => {
         });
     };
 
-// Fixed formatDuration function for ManageExams.js
+    const formatDuration = (minutes) => {
+        // Make sure we're working with a number
+        if (typeof minutes !== 'number') {
+            minutes = parseInt(minutes);
+        }
 
-const formatDuration = (minutes) => {
-    // Make sure we're working with a number
-    if (typeof minutes !== 'number') {
-        minutes = parseInt(minutes);
-    }
-    
-    // If it's NaN or undefined after parsing, use default 120 minutes
-    if (isNaN(minutes) || minutes === null || minutes === undefined) {
-        minutes = 120; // Default 2 hours
-    }
-    
-    // Format nicely
-    if (minutes >= 60) {
-        const hours = Math.floor(minutes / 60);
-        const remainingMinutes = minutes % 60;
-        return `${hours} ${hours === 1 ? 'hour' : 'hours'}${remainingMinutes > 0 ? ` ${remainingMinutes} min` : ''}`;
-    } else {
-        return `${minutes} minutes`;
-    }
-};
+        // If it's NaN or undefined after parsing, use default 120 minutes
+        if (isNaN(minutes) || minutes === null || minutes === undefined) {
+            minutes = 120; // Default 2 hours
+        }
+
+        // Format nicely
+        if (minutes >= 60) {
+            const hours = Math.floor(minutes / 60);
+            const remainingMinutes = minutes % 60;
+            return `${hours} ${hours === 1 ? 'hour' : 'hours'}${remainingMinutes > 0 ? ` ${remainingMinutes} min` : ''}`;
+        } else {
+            return `${minutes} minutes`;
+        }
+    };
 
     const goToSolutionEditor = (examId, examType) => {
         navigate(`/solution-editor/${examType}/${examId}`);
@@ -220,8 +222,8 @@ const formatDuration = (minutes) => {
                     <CardHeader bg={accentBg} py={4}>
                         <Flex justify="space-between" align="center">
                             <Heading size="lg">Manage Exams</Heading>
-                            <Button 
-                                colorScheme="blue" 
+                            <Button
+                                colorScheme="blue"
                                 onClick={fetchExams}
                                 leftIcon={<Icon as={FaSync} />}
                                 size="md"
@@ -257,8 +259,8 @@ const formatDuration = (minutes) => {
                                         </InputGroup>
                                     </Box>
                                     <Box width={{ base: "100%", md: "250px" }}>
-                                        <Select 
-                                            value={filterType} 
+                                        <Select
+                                            value={filterType}
                                             onChange={(e) => setFilterType(e.target.value)}
                                             boxShadow="sm"
                                             borderRadius="md"
@@ -289,7 +291,7 @@ const formatDuration = (minutes) => {
                                             <Tbody>
                                                 {filteredExams.length > 0 ? (
                                                     filteredExams.map((exam) => (
-                                                        <Tr 
+                                                        <Tr
                                                             key={`${exam.examModel}-${exam._id}`}
                                                             _hover={{ bg: hoverBg }}
                                                             transition="background 0.2s"
@@ -335,6 +337,33 @@ const formatDuration = (minutes) => {
                                                                         >
                                                                             Submissions
                                                                         </Button>
+                                                                        <Button
+                                                                            colorScheme="teal"
+                                                                            onClick={() => navigate(`/exam-queries/${exam.examModel}/${exam._id}`)}
+                                                                            leftIcon={<Icon as={FaQuestionCircle} />}
+                                                                            size="sm"
+                                                                            boxShadow="sm"
+                                                                            _hover={{ boxShadow: "md", transform: "translateY(-1px)" }}
+                                                                            transition="all 0.2s"
+                                                                        >
+                                                                            Queries
+                                                                        </Button>
+                                                                        {/* Add Plagiarism Check button for coding exams */}
+                                                                        {exam.examModel === 'CodingExam' && (
+                                                                            <Tooltip label="Check plagiarism with MOSS" hasArrow>
+                                                                                <Button
+                                                                                    colorScheme="red"
+                                                                                    onClick={() => navigate(`/exam-submissions/${exam.examModel}/${exam._id}?tab=plagiarism`)}
+                                                                                    leftIcon={<Icon as={FaShieldAlt} />}
+                                                                                    size="sm"
+                                                                                    boxShadow="sm"
+                                                                                    _hover={{ boxShadow: "md", transform: "translateY(-1px)" }}
+                                                                                    transition="all 0.2s"
+                                                                                >
+                                                                                    Plagiarism
+                                                                                </Button>
+                                                                            </Tooltip>
+                                                                        )}
                                                                     </ButtonGroup>
                                                                     <FormControl display="flex" alignItems="center" minW="120px">
                                                                         <FormLabel htmlFor={`publish-switch-${exam._id}`} mb="0" fontSize="sm">
@@ -376,7 +405,7 @@ const formatDuration = (minutes) => {
                                         </Table>
                                     </TableContainer>
                                 </Box>
-                                
+
                                 <Text mt={4} fontSize="sm" color="gray.500">
                                     Showing {filteredExams.length} of {exams.length} exams
                                 </Text>

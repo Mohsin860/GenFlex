@@ -45,7 +45,7 @@ const CreateCodingExam = () => {
   const [currentExamId, setCurrentExamId] = useState(null);
   const [numQuestions, setNumQuestions] = useState(5);
   const [questionType, setQuestionType] = useState(null);
-  const [duration, setDuration] = useState(); // Default 2 hours in minutes
+  const [duration, setDuration] = useState(120); // Default 2 hours in minutes
   const toast = useToast();
 
   const bgColor = useColorModeValue('gray.50', 'gray.900');

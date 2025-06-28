@@ -1,5 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { 
+    submitQuery,
+    getQueries
+} from '../../services/studentExamService';
+import { 
+    FaQuestionCircle, 
+    FaReply, 
+    FaCheck 
+} from 'react-icons/fa';
 import {
     Box,
     Heading,
@@ -32,7 +41,9 @@ import {
     Icon,
     SimpleGrid,
     useColorModeValue,
-    Tooltip
+    Tooltip,
+    Textarea,
+    useToast
 } from '@chakra-ui/react';
 import { getExamResults } from '../../services/studentExamService';
 import { ChevronLeftIcon } from '@chakra-ui/icons';
@@ -44,6 +55,12 @@ const ExamResultsPage = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const navigate = useNavigate();
+    const [queries, setQueries] = useState([]);
+    const [newQuery, setNewQuery] = useState('');
+    const [currentQuestionId, setCurrentQuestionId] = useState('');
+    const [showQueryForm, setShowQueryForm] = useState(false);
+    const [submittingQuery, setSubmittingQuery] = useState(false);
+    const toast = useToast();
 
     // Color mode values
     const bgColor = useColorModeValue('gray.50', 'gray.900');
@@ -54,6 +71,60 @@ const ExamResultsPage = () => {
     const feedbackBg = useColorModeValue('blue.50', 'blue.900');
     const feedbackTextBg = useColorModeValue('white', 'gray.700');
     const feedbackTextColor = useColorModeValue('gray.700', 'gray.200');
+
+    // Check if exam has been evaluated yet
+    const isEvaluated = results && results.status === 'evaluated' && results.totalScore !== undefined;
+    // Check if exam time expired
+    const isExpired = results && results.status === 'expired';
+
+    const fetchQueries = async () => {
+        try {
+            const response = await getQueries(attemptId);
+            setQueries(response.queries);
+        } catch (error) {
+            console.error('Error fetching queries:', error);
+            toast({
+                title: 'Error',
+                description: 'Failed to load queries',
+                status: 'error',
+                duration: 5000,
+                isClosable: true,
+            });
+        }
+    };
+
+    const handleSubmitQuery = async () => {
+        try {
+            setSubmittingQuery(true);
+            await submitQuery({
+                attemptId,
+                questionId: currentQuestionId,
+                message: newQuery
+            });
+            
+            toast({
+                title: 'Query Submitted',
+                description: 'Your query has been sent to the teacher',
+                status: 'success',
+                duration: 3000,
+                isClosable: true,
+            });
+            
+            setNewQuery('');
+            setShowQueryForm(false);
+            fetchQueries();
+        } catch (error) {
+            toast({
+                title: 'Error',
+                description: error.response?.data?.message || 'Failed to submit query',
+                status: 'error',
+                duration: 5000,
+                isClosable: true,
+            });
+        } finally {
+            setSubmittingQuery(false);
+        }
+    };
 
     useEffect(() => {
         const fetchResults = async () => {
@@ -73,6 +144,12 @@ const ExamResultsPage = () => {
             fetchResults();
         }
     }, [attemptId]);
+
+    useEffect(() => {
+        if (attemptId && isEvaluated) {
+            fetchQueries();
+        }
+    }, [attemptId, isEvaluated]);
 
     const formatDate = (dateString) => {
         if (!dateString) return 'N/A';
@@ -175,11 +252,6 @@ const ExamResultsPage = () => {
             </Box>
         );
     }
-
-    // Check if exam has been evaluated yet
-    const isEvaluated = results && results.status === 'evaluated' && results.totalScore !== undefined;
-    // Check if exam time expired
-    const isExpired = results && results.status === 'expired';
 
     return (
         <Box bg={bgColor} minH="calc(100vh - 150px)" py={8}>
@@ -390,6 +462,73 @@ const ExamResultsPage = () => {
                                                                 {results.message || "Your answer has been submitted and is awaiting evaluation."}
                                                             </Text>
                                                         </Alert>
+                                                    )}
+
+                                                    {isEvaluated && (
+                                                        <Box mt={4}>
+                                                            <Heading size="sm" mb={2}>Queries</Heading>
+                                                            {queries.filter(q => q.questionId === answer.questionId).map((query, idx) => (
+                                                                <Box key={idx} mb={4} p={3} bg="gray.50" borderRadius="md">
+                                                                    <Flex justify="space-between" mb={2}>
+                                                                        <Text fontWeight="medium">Your Query:</Text>
+                                                                        <Badge 
+                                                                            colorScheme={query.status === 'resolved' ? 'green' : 'orange'}
+                                                                            fontSize="xs"
+                                                                        >
+                                                                            {query.status}
+                                                                        </Badge>
+                                                                    </Flex>
+                                                                    <Text mb={3} whiteSpace="pre-wrap">{query.message}</Text>
+                                                                    {query.response && (
+                                                                        <>
+                                                                            <Text fontWeight="medium">Teacher's Response:</Text>
+                                                                            <Text whiteSpace="pre-wrap" fontStyle="italic">{query.response}</Text>
+                                                                        </>
+                                                                    )}
+                                                                </Box>
+                                                            ))}
+
+                                                            {showQueryForm && currentQuestionId === answer.questionId ? (
+                                                                <Box mt={3}>
+                                                                    <Textarea
+                                                                        value={newQuery}
+                                                                        onChange={(e) => setNewQuery(e.target.value)}
+                                                                        placeholder="Enter your query about this question..."
+                                                                        mb={2}
+                                                                    />
+                                                                    <Flex justify="flex-end" gap={2}>
+                                                                        <Button 
+                                                                            size="sm" 
+                                                                            onClick={() => setShowQueryForm(false)}
+                                                                            variant="outline"
+                                                                        >
+                                                                            Cancel
+                                                                        </Button>
+                                                                        <Button 
+                                                                            size="sm" 
+                                                                            colorScheme="blue"
+                                                                            onClick={handleSubmitQuery}
+                                                                            isLoading={submittingQuery}
+                                                                            leftIcon={<FaReply />}
+                                                                        >
+                                                                            Submit Query
+                                                                        </Button>
+                                                                    </Flex>
+                                                                </Box>
+                                                            ) : (
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="outline"
+                                                                    leftIcon={<FaQuestionCircle />}
+                                                                    onClick={() => {
+                                                                        setCurrentQuestionId(answer.questionId);
+                                                                        setShowQueryForm(true);
+                                                                    }}
+                                                                >
+                                                                    Ask a Question
+                                                                </Button>
+                                                            )}
+                                                        </Box>
                                                     )}
                                                 </Box>
                                             ))}

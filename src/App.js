@@ -16,11 +16,10 @@ import ProtectedRoute from './components/common/ProtectedRoute';
 import TakeExamPage from './components/student/TakeExamPage';
 import ExamResultsPage from './components/student/ExamResultsPage';
 import ManageExams from './components/faculty/ManageExams';
-// Import the TeacherSolutionEditor component
 import TeacherSolutionEditor from './components/faculty/TeacherSolutionEditor';
 import ExamSubmissions from './components/faculty/ExamSubmissions';
 import SubmissionDetails from './components/faculty/SubmissionDetails';
-
+import QueryManagement from './components/faculty/QueryManagement';
 
 function App() {
   return (
@@ -38,18 +37,19 @@ function App() {
         <Route path="/faculty/create-coding-exam" element={<ProtectedRoute><CreateCodingExam /></ProtectedRoute>} />
         <Route path="/faculty/evaluate-exam" element={<ProtectedRoute><EvaluateExam /></ProtectedRoute>} />
         <Route path="/faculty/create-lecture" element={<ProtectedRoute><CreateLecture /></ProtectedRoute>} />
-        <Route path="/solution-editor/:examType/:examId" element={<TeacherSolutionEditor />} />
-        <Route path="/exam-submissions/:examType/:examId" element={<ExamSubmissions />} />
-        <Route path="/submission-details/:submissionId" element={<SubmissionDetails />} />
-
-
-        <Route path="/manage-exams" element={<ManageExams />} />
+        <Route path="/solution-editor/:examType/:examId" element={<ProtectedRoute><TeacherSolutionEditor /></ProtectedRoute>} />
+        <Route path="/exam-submissions/:examType/:examId" element={<ProtectedRoute><ExamSubmissions /></ProtectedRoute>} />
+        <Route path="/submission-details/:submissionId" element={<ProtectedRoute><SubmissionDetails /></ProtectedRoute>} />
+        {/* Add this new route for query management */}
+        <Route path="/exam-queries/:examType/:examId" element={<ProtectedRoute><QueryManagement /></ProtectedRoute>} />
+        
+        <Route path="/manage-exams" element={<ProtectedRoute><ManageExams /></ProtectedRoute>} />
 
         {/* Student Routes */}
         <Route path="/student" element={<ProtectedRoute><StudentHome /></ProtectedRoute>} />
         <Route path="/student/take-exam" element={<ProtectedRoute><TakeExam /></ProtectedRoute>} />
-        <Route path="/take-exam/:examType/:examId" element={<TakeExamPage />} />
-        <Route path="/exam-results/:attemptId" element={<ExamResultsPage />} />
+        <Route path="/take-exam/:examType/:examId" element={<ProtectedRoute><TakeExamPage /></ProtectedRoute>} />
+        <Route path="/exam-results/:attemptId" element={<ProtectedRoute><ExamResultsPage /></ProtectedRoute>} />
       </Routes>
       <Footer />
     </Router>

@@ -2,6 +2,8 @@ const Exam = require('../models/Exam');
 const CodingExam = require('../models/CodingExam');
 const ExamAttempt = require('../models/ExamAttempt'); // Add this import
 //onst ExamAttempt = require(path.join(__dirname, '..', 'models', 'ExamAttempt.js'));
+const Query = require('../models/Query');
+
 
 
 
@@ -755,7 +757,75 @@ const updateEvaluation = async (req, res) => {
     }
   };
 
-// Add these to your exports
+  // Get queries for a teacher's exam
+const getQueriesByTeacher = async (req, res) => {
+    try {
+        const { examId, examType } = req.params;
+        
+        const queries = await Query.find({
+            teacher: req.user._id,
+            exam: examId,
+            examType
+        })
+        .populate('student', 'name email')
+        .sort({ status: 1, createdAt: -1 });
+
+        res.status(200).json({
+            success: true,
+            queries
+        });
+    } catch (error) {
+        console.error('Error fetching queries:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to retrieve queries',
+            error: error.message
+        });
+    }
+};
+
+// Respond to a query
+const respondToQuery = async (req, res) => {
+    try {
+        const { queryId } = req.params;
+        const { response, status } = req.body;
+
+        const query = await Query.findOneAndUpdate(
+            { 
+                _id: queryId,
+                teacher: req.user._id 
+            },
+            { 
+                response,
+                status,
+                resolvedAt: status === 'resolved' ? Date.now() : null
+            },
+            { new: true }
+        );
+
+        if (!query) {
+            return res.status(404).json({
+                success: false,
+                message: 'Query not found or unauthorized'
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: 'Response submitted successfully',
+            query
+        });
+    } catch (error) {
+        console.error('Error responding to query:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to respond to query',
+            error: error.message
+        });
+    }
+};
+
+// Add to exports
 module.exports = {
     getTeacherExams,
     toggleExamPublish,
@@ -767,8 +837,9 @@ module.exports = {
     publishAllResults,
     deleteSubmission,
     deleteAllSubmissions,
-    updateEvaluation
-  };
-
+    updateEvaluation,
+    getQueriesByTeacher,
+    respondToQuery
+};
 
 

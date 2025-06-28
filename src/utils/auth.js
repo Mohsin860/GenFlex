@@ -14,6 +14,14 @@ export const signup = async (userData) => {
     throw new Error(error.response?.data?.message || 'Signup failed');
   }
 };
+// In src/utils/auth.js - add this function
+export const getAuthHeaders = () => {
+  const user = JSON.parse(localStorage.getItem('user'));
+  return {
+    'Authorization': user?.token ? `Bearer ${user.token}` : '',
+    'Content-Type': 'application/json'
+  };
+};
 
 export const login = async (credentials) => {
   try {

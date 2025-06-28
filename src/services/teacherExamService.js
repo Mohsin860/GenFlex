@@ -48,70 +48,85 @@ export const saveTeacherSolutions = async (examId, examType, solutions) => {
   return response.data;
 };
 
-
-
 // Get student submissions for an exam
 export const getExamSubmissions = async (examType, examId) => {
-    const response = await axios.get(
-      `${API_URL}/exam-submissions/${examType}/${examId}`, 
-      createAuthHeader()
-    );
-    return response.data;
-  };
-  
-  // Get details of a specific submission
-  export const getSubmissionDetails = async (submissionId) => {
-    const response = await axios.get(
-      `${API_URL}/submission/${submissionId}`, 
-      createAuthHeader()
-    );
-    return response.data;
-  };
+  const response = await axios.get(
+    `${API_URL}/exam-submissions/${examType}/${examId}`, 
+    createAuthHeader()
+  );
+  return response.data;
+};
 
-  // Publish results for a single submission
+// Get details of a specific submission
+export const getSubmissionDetails = async (submissionId) => {
+  const response = await axios.get(
+    `${API_URL}/submission/${submissionId}`, 
+    createAuthHeader()
+  );
+  return response.data;
+};
+
+// Publish results for a single submission
 export const publishSubmissionResults = async (submissionId) => {
-    const response = await axios.post(
-      `${API_URL}/publish-results/${submissionId}`,
-      {},
-      createAuthHeader()
-    );
-    return response.data;
-  };
-  
-  // Publish all results for an exam
-  export const publishAllResults = async (examType, examId) => {
-    const response = await axios.post(
-      `${API_URL}/publish-all-results/${examType}/${examId}`,
-      {},
-      createAuthHeader()
-    );
-    return response.data;
-  };
+  const response = await axios.post(
+    `${API_URL}/publish-results/${submissionId}`,
+    {},
+    createAuthHeader()
+  );
+  return response.data;
+};
 
-  // Delete a specific submission
+// Publish all results for an exam
+export const publishAllResults = async (examType, examId) => {
+  const response = await axios.post(
+    `${API_URL}/publish-all-results/${examType}/${examId}`,
+    {},
+    createAuthHeader()
+  );
+  return response.data;
+};
+
+// Delete a specific submission
 export const deleteSubmission = async (submissionId) => {
-    const response = await axios.delete(
-      `${API_URL}/submission/${submissionId}`,
-      createAuthHeader()
-    );
-    return response.data;
-  };
-  
-  // Delete all submissions for an exam
-  export const deleteAllSubmissions = async (examType, examId) => {
-    const response = await axios.delete(
-      `${API_URL}/submissions/${examType}/${examId}`,
-      createAuthHeader()
-    );
-    return response.data;
-  };
+  const response = await axios.delete(
+    `${API_URL}/submission/${submissionId}`,
+    createAuthHeader()
+  );
+  return response.data;
+};
 
-  // Update evaluation
+// Delete all submissions for an exam
+export const deleteAllSubmissions = async (examType, examId) => {
+  const response = await axios.delete(
+    `${API_URL}/submissions/${examType}/${examId}`,
+    createAuthHeader()
+  );
+  return response.data;
+};
+
+// Update evaluation
 export const updateEvaluation = async (submissionId, evaluationData) => {
-    const response = await axios.put(
-      `${API_URL}/evaluation/${submissionId}`,
-      evaluationData,
-      createAuthHeader()
-    );
-    return response.data;
-  };
+  const response = await axios.put(
+    `${API_URL}/evaluation/${submissionId}`,
+    evaluationData,
+    createAuthHeader()
+  );
+  return response.data;
+};
+
+export const getQueriesByTeacher = async (examId, examType) => {
+  const response = await axios.get(
+    `${API_URL}/queries/${examType}/${examId}`,
+    createAuthHeader()
+  );
+  return response.data;
+};
+
+export const respondToQuery = async (queryId, data) => {
+  const response = await axios.put(
+    `${API_URL}/query/${queryId}`,
+    data,
+    createAuthHeader()
+  );
+  return response.data;
+};

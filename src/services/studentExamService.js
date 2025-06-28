@@ -40,17 +40,34 @@ export const submitExamAttempt = async (examData) => {
 
 // Get exam results by attempt ID
 export const getExamResults = async (attemptId) => {
-    const response = await axios.get(
-      `${API_URL}/results/${attemptId}`, 
-      createAuthHeader()
-    );
-    return response.data;
-  };
+  const response = await axios.get(
+    `${API_URL}/results/${attemptId}`, 
+    createAuthHeader()
+  );
+  return response.data;
+};
 
 // Get all attempts for current student
 export const getStudentAttempts = async () => {
   const response = await axios.get(
     `${API_URL}/attempts`, 
+    createAuthHeader()
+  );
+  return response.data;
+};
+
+export const submitQuery = async (data) => {
+  const response = await axios.post(
+    `${API_URL}/query`, 
+    data, 
+    createAuthHeader()
+  );
+  return response.data;
+};
+
+export const getQueries = async (attemptId) => {
+  const response = await axios.get(
+    `${API_URL}/queries/${attemptId}`, 
     createAuthHeader()
   );
   return response.data;

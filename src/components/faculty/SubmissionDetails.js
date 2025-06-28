@@ -505,6 +505,8 @@ const SubmissionDetails = () => {
                                     </Stat>
                                 </CardBody>
                             </Card>
+
+
                         </Grid>
 
                         <Heading size="md" mb={4}>Student Answers</Heading>
@@ -540,6 +542,7 @@ const SubmissionDetails = () => {
                                 {submission.answers.map((answer, index) => (
                                     <TabPanel key={index} px={0}>
                                         <VStack spacing={4} align="stretch">
+                                            {/* Student Answer Card */}
                                             <Card bg={answerBg} boxShadow="sm">
                                                 <CardHeader pb={0}>
                                                     <Heading size="sm">Student's Answer</Heading>
@@ -564,72 +567,99 @@ const SubmissionDetails = () => {
                                                 </CardBody>
                                             </Card>
 
+                                            {/* Only show evaluation and queries if submission is evaluated */}
                                             {submission.status === 'evaluated' && (
-                                                <Card bg={evaluationBg} boxShadow="sm">
-                                                    <CardHeader pb={0}>
-                                                        <Heading size="sm">Evaluation</Heading>
-                                                    </CardHeader>
-                                                    <CardBody>
-                                                        {isEditing ? (
-                                                            <Grid templateColumns="repeat(12, 1fr)" gap={4}>
-                                                                <GridItem colSpan={{ base: 12, md: 3 }}>
-                                                                    <FormControl>
-                                                                        <FormLabel fontWeight="medium">Score (0-100)</FormLabel>
-                                                                        <NumberInput
-                                                                            min={0}
-                                                                            max={100}
-                                                                            value={editedAnswers[index]?.score || 0}
-                                                                            onChange={(value) => handleScoreChange(index, value)}
-                                                                            size="md"
-                                                                            boxShadow="sm"
+                                                <>
+                                                    {/* Evaluation Card */}
+                                                    <Card bg={evaluationBg} boxShadow="sm">
+                                                        <CardHeader pb={0}>
+                                                            <Heading size="sm">Evaluation</Heading>
+                                                        </CardHeader>
+                                                        <CardBody>
+                                                            {isEditing ? (
+                                                                <Grid templateColumns="repeat(12, 1fr)" gap={4}>
+                                                                    <GridItem colSpan={{ base: 12, md: 3 }}>
+                                                                        <FormControl>
+                                                                            <FormLabel fontWeight="medium">Score (0-100)</FormLabel>
+                                                                            <NumberInput
+                                                                                min={0}
+                                                                                max={100}
+                                                                                value={editedAnswers[index]?.score || 0}
+                                                                                onChange={(value) => handleScoreChange(index, value)}
+                                                                                size="md"
+                                                                                boxShadow="sm"
+                                                                                borderRadius="md"
+                                                                            >
+                                                                                <NumberInputField />
+                                                                                <NumberInputStepper>
+                                                                                    <NumberIncrementStepper />
+                                                                                    <NumberDecrementStepper />
+                                                                                </NumberInputStepper>
+                                                                            </NumberInput>
+                                                                        </FormControl>
+                                                                    </GridItem>
+                                                                    <GridItem colSpan={{ base: 12, md: 9 }}>
+                                                                        <FormControl>
+                                                                            <FormLabel fontWeight="medium">Feedback</FormLabel>
+                                                                            <Textarea
+                                                                                value={editedAnswers[index]?.feedback || ''}
+                                                                                onChange={(e) => handleFeedbackChange(index, e.target.value)}
+                                                                                placeholder="Provide feedback on this answer"
+                                                                                rows={4}
+                                                                                boxShadow="sm"
+                                                                                borderRadius="md"
+                                                                                resize="vertical"
+                                                                            />
+                                                                        </FormControl>
+                                                                    </GridItem>
+                                                                </Grid>
+                                                            ) : (
+                                                                <VStack align="start" spacing={3}>
+                                                                    <HStack>
+                                                                        <Text fontWeight="medium">Score:</Text>
+                                                                        <Badge
+                                                                            colorScheme={answer.score >= 70 ? "green" : answer.score >= 50 ? "yellow" : "red"}
+                                                                            py={1}
+                                                                            px={2}
                                                                             borderRadius="md"
                                                                         >
-                                                                            <NumberInputField />
-                                                                            <NumberInputStepper>
-                                                                                <NumberIncrementStepper />
-                                                                                <NumberDecrementStepper />
-                                                                            </NumberInputStepper>
-                                                                        </NumberInput>
-                                                                    </FormControl>
-                                                                </GridItem>
-                                                                <GridItem colSpan={{ base: 12, md: 9 }}>
-                                                                    <FormControl>
-                                                                        <FormLabel fontWeight="medium">Feedback</FormLabel>
-                                                                        <Textarea
-                                                                            value={editedAnswers[index]?.feedback || ''}
-                                                                            onChange={(e) => handleFeedbackChange(index, e.target.value)}
-                                                                            placeholder="Provide feedback on this answer"
-                                                                            rows={4}
-                                                                            boxShadow="sm"
-                                                                            borderRadius="md"
-                                                                            resize="vertical"
-                                                                        />
-                                                                    </FormControl>
-                                                                </GridItem>
-                                                            </Grid>
-                                                        ) : (
-                                                            <VStack align="start" spacing={3}>
-                                                                <HStack>
-                                                                    <Text fontWeight="medium">Score:</Text>
-                                                                    <Badge
-                                                                        colorScheme={answer.score >= 70 ? "green" : answer.score >= 50 ? "yellow" : "red"}
-                                                                        py={1}
-                                                                        px={2}
-                                                                        borderRadius="md"
-                                                                    >
-                                                                        {answer.score} / 100
-                                                                    </Badge>
-                                                                </HStack>
-                                                                <Box>
-                                                                    <Text fontWeight="medium" mb={1}>Feedback:</Text>
-                                                                    <Card variant="outline" p={3} borderRadius="md" boxShadow="sm">
-                                                                        <Text>{answer.feedback || 'No feedback provided'}</Text>
-                                                                    </Card>
-                                                                </Box>
-                                                            </VStack>
-                                                        )}
-                                                    </CardBody>
-                                                </Card>
+                                                                            {answer.score} / 100
+                                                                        </Badge>
+                                                                    </HStack>
+                                                                    <Box>
+                                                                        <Text fontWeight="medium" mb={1}>Feedback:</Text>
+                                                                        <Card variant="outline" p={3} borderRadius="md" boxShadow="sm">
+                                                                            <Text>{answer.feedback || 'No feedback provided'}</Text>
+                                                                        </Card>
+                                                                    </Box>
+                                                                </VStack>
+                                                            )}
+                                                        </CardBody>
+                                                    </Card>
+
+                                                    {/* Student Queries Card - only shown if there are queries for this question */}
+                                                    {submission.queries?.filter(q => q.questionId === answer.questionId).length > 0 && (
+                                                        <Card bg="gray.50" boxShadow="sm">
+                                                            <CardHeader pb={0}>
+                                                                <Heading size="sm">Student Queries</Heading>
+                                                            </CardHeader>
+                                                            <CardBody>
+                                                                {submission.queries?.filter(q => q.questionId === answer.questionId).map((query, idx) => (
+                                                                    <Box key={idx} mb={4} p={3} bg="white" borderRadius="md">
+                                                                        <Text fontWeight="medium">Student Query:</Text>
+                                                                        <Text mb={2}>{query.message}</Text>
+                                                                        {query.response && (
+                                                                            <>
+                                                                                <Text fontWeight="medium">Your Response:</Text>
+                                                                                <Text>{query.response}</Text>
+                                                                            </>
+                                                                        )}
+                                                                    </Box>
+                                                                ))}
+                                                            </CardBody>
+                                                        </Card>
+                                                    )}
+                                                </>
                                             )}
                                         </VStack>
                                     </TabPanel>

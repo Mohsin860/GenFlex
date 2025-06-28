@@ -3,6 +3,7 @@ const CodingExam = require('../models/CodingExam');
 const ExamAttempt = require('../models/ExamAttempt');
 const { spawn } = require('child_process');
 const path = require('path');
+const Query = require('../models/Query');
 
 // Get all available exams for students
 // In studentExamController.js, enhance the error handling:
@@ -349,10 +350,95 @@ const getStudentAttempts = async (req, res) => {
         });
     }
 };
+
+// Submit a query about exam results
+const submitQuery = async (req, res) => {
+    try {
+        const { attemptId, questionId, message } = req.body;
+        
+        // Get the attempt details
+        const attempt = await ExamAttempt.findById(attemptId);
+        if (!attempt) {
+            return res.status(404).json({
+                success: false,
+                message: 'Exam attempt not found'
+            });
+        }
+
+        // Get the exam to find the teacher
+        let exam;
+        if (attempt.examType === 'Exam') {
+            exam = await Exam.findById(attempt.exam);
+        } else if (attempt.examType === 'CodingExam') {
+            exam = await CodingExam.findById(attempt.exam);
+        }
+
+        if (!exam) {
+            return res.status(404).json({
+                success: false,
+                message: 'Exam not found'
+            });
+        }
+
+        // Create the query
+        const query = new Query({
+            attempt: attemptId,
+            student: req.user._id,
+            teacher: exam.createdBy,
+            exam: attempt.exam,
+            examType: attempt.examType,
+            questionId,
+            message
+        });
+
+        await query.save();
+
+        res.status(201).json({
+            success: true,
+            message: 'Query submitted successfully',
+            query
+        });
+    } catch (error) {
+        console.error('Error submitting query:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to submit query',
+            error: error.message
+        });
+    }
+};
+
+// Get queries for an attempt
+const getQueries = async (req, res) => {
+    try {
+        const { attemptId } = req.params;
+
+        const queries = await Query.find({ attempt: attemptId })
+            .sort({ createdAt: -1 })
+            .populate('student', 'name email')
+            .populate('teacher', 'name email');
+
+        res.status(200).json({
+            success: true,
+            queries
+        });
+    } catch (error) {
+        console.error('Error fetching queries:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to retrieve queries',
+            error: error.message
+        });
+    }
+};
+
+// Add these to exports
 module.exports = {
     getAvailableExams,
     getExamById,
     submitExamAttempt,
     getExamResults,
-    getStudentAttempts
+    getStudentAttempts,
+    submitQuery,
+    getQueries
 };

@@ -3,38 +3,31 @@ import sys
 import json
 import traceback
 import os
-from hugchat import hugchat
-from hugchat.login import Login
+from openai import OpenAI
 
-# HuggingFace login credentials
-EMAIL = "harisgul031@gmail.com"
-PASSWD = "HcestLavie123@@"
+# OpenAI API configuration
+API_KEY = "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"
 
-def setup_chatbot():
+def setup_openai_client():
+    """
+    Setup OpenAI client
+    """
     try:
-        # Setup login cookies dir
-        cookie_path_dir = os.path.join(os.path.dirname(__file__), 'cookies')
-        os.makedirs(cookie_path_dir, exist_ok=True)
-        
-        # Login to Hugging Face
-        sign = Login(EMAIL, PASSWD)
-        cookies = sign.login(cookie_dir_path=cookie_path_dir, save_cookies=True)
-        chatbot = hugchat.ChatBot(cookies=cookies.get_dict())
-        chatbot.new_conversation()
-        return chatbot
+        client = OpenAI(api_key=API_KEY)
+        return client
     except Exception as e:
-        print(f"Error setting up chatbot: {str(e)}", file=sys.stderr)
+        print(f"Error setting up OpenAI client: {str(e)}", file=sys.stderr)
         return None
 
 def evaluate_math_answer(question, student_answer, reference_answer):
     """
-    Use HuggingFace's chatbot to evaluate a math answer
+    Use OpenAI GPT to evaluate a math answer
     
     Returns a dict with score and feedback
     """
     try:
-        chatbot = setup_chatbot()
-        if not chatbot:
+        client = setup_openai_client()
+        if not client:
             return {
                 "score": 0, 
                 "feedback": "Error setting up evaluation system. Please try again later."
@@ -52,18 +45,28 @@ def evaluate_math_answer(question, student_answer, reference_answer):
         **Reference Correct Answer:** {reference_answer}
 
         ### **Instructions for Evaluation:** 
-        1. Just check that the final asnwer of student matches with teacher solution (reference) and give marks accirdingly from 0 to 100
-        2. give general 1 line feedback.
+        1. Just check that the final answer of student matches with teacher solution (reference) and give marks accordingly from 0 to 100
+        2. Give general 1 line feedback.
 
         **Response Format - Provide ONLY a JSON object with these fields:**  
         {{
-            "score": [Rating between 0-100]
+            "score": [Rating between 0-100],
+            "feedback": "[Your simple feedback to the student]"
         }}
         """
 
-        # Get AI feedback
-        response = chatbot.chat(evaluation_prompt)
-        response_text = str(response)
+        # Get AI feedback using OpenAI
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are an expert math evaluator. Always respond with valid JSON only."},
+                {"role": "user", "content": evaluation_prompt}
+            ],
+            max_tokens=300,
+            temperature=0.3
+        )
+        
+        response_text = response.choices[0].message.content
         
         # Extract JSON from response
         try:
@@ -93,13 +96,16 @@ def evaluate_math_answer(question, student_answer, reference_answer):
             return evaluation
             
         except Exception as e:
+            print(f"JSON parsing error: {str(e)}", file=sys.stderr)
+            print(f"Response text: {response_text}", file=sys.stderr)
             # If JSON parsing fails, create a basic evaluation
             return {
-                "score": 0 if reference_answer.strip() != student_answer.strip() else 100,
+                "score": 100 if reference_answer.strip() == student_answer.strip() else 0,
                 "feedback": f"Unable to provide detailed feedback. Please check if your answer matches '{reference_answer}'."
             }
             
     except Exception as e:
+        print(f"OpenAI API error: {str(e)}", file=sys.stderr)
         return {
             "score": 0,
             "feedback": f"Error during evaluation: {str(e)}"
@@ -158,6 +164,7 @@ def evaluate_submissions(data):
         return {"success": True, "results": results}
     
     except Exception as e:
+        print(f"Math evaluation error: {str(e)}", file=sys.stderr)
         traceback_str = traceback.format_exc()
         error_message = f"Error in evaluation: {str(e)}\n{traceback_str}"
         return {"success": False, "error": error_message}

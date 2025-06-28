@@ -1,12 +1,14 @@
 const express = require('express');
 const router = express.Router();
-const { protect } = require('../middleware/auth'); // Assuming you have an auth middleware
+const { protect } = require('../middleware/auth');
 const {
     getAvailableExams,
     getExamById,
     submitExamAttempt,
     getExamResults,
-    getStudentAttempts
+    getStudentAttempts,
+    submitQuery,
+    getQueries
 } = require('../controllers/studentExamController');
 
 // Protected routes - require authentication
@@ -15,5 +17,9 @@ router.get('/details/:examType/:examId', protect, getExamById);
 router.post('/submit', protect, submitExamAttempt);
 router.get('/results/:attemptId', protect, getExamResults);
 router.get('/attempts', protect, getStudentAttempts);
+
+// Query routes
+router.post('/query', protect, submitQuery);
+router.get('/queries/:attemptId', protect, getQueries);
 
 module.exports = router;

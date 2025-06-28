@@ -1,6 +1,5 @@
 import os
-from hugchat import hugchat
-from hugchat.login import Login
+from openai import OpenAI
 import json
 import sys
 import time
@@ -8,30 +7,42 @@ import re
 
 class DiverseCodeGenerator:
     def __init__(self):
-        self.email = "harisgul031@gmail.com"
-        self.password = "HcestLavie123@@"
-        self.cookie_path = os.path.join(os.path.dirname(__file__), 'cookies')
+        self.api_key = "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"
         self.max_retries = 3
+        self.client = None
 
-    def setup_chatbot(self):
+    def setup_openai_client(self):
         try:
-            os.makedirs(self.cookie_path, exist_ok=True)
-            sign = Login(self.email, self.password)
-            cookies = sign.login(cookie_dir_path=self.cookie_path, save_cookies=True)
-            self.chatbot = hugchat.ChatBot(cookies=cookies.get_dict())
-            self.chatbot.new_conversation()
+            self.client = OpenAI(api_key=self.api_key)
             return True
         except Exception as e:
             print(json.dumps({"error": f"Setup error: {str(e)}"}), file=sys.stderr)
             return False
+
+    def get_ai_response(self, prompt):
+        """Get response from OpenAI GPT"""
+        try:
+            response = self.client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": "You are an expert programming instructor. Generate diverse, challenging programming questions with complete solutions."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=2000,
+                temperature=0.7
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            print(f"OpenAI API error: {str(e)}", file=sys.stderr)
+            raise e
 
     def generate_questions(self, prompt, num_questions):
         try:
             # Cap the maximum questions
             num_questions = min(int(num_questions), 15)
             
-            if not self.setup_chatbot():
-                raise Exception("Failed to initialize chatbot")
+            if not self.setup_openai_client():
+                raise Exception("Failed to initialize OpenAI client")
             
             # First try batch generation (faster if it works)
             batch_questions = self.generate_batch_questions(prompt, num_questions)
@@ -66,8 +77,7 @@ class DiverseCodeGenerator:
                 f"Make sure to generate EXACTLY {num_questions} questions with this format, numbering from 1 to {num_questions}."
             )
             
-            response = self.chatbot.chat(batch_prompt)
-            response_text = str(response)
+            response_text = self.get_ai_response(batch_prompt)
             
             # Use regex to extract questions and solutions with special markers
             question_blocks = re.findall(r'QUESTION_START\n(Question \d+:.*?)\nQUESTION_END', response_text, re.DOTALL)
@@ -125,8 +135,7 @@ class DiverseCodeGenerator:
             )
             
             try:
-                response = self.chatbot.chat(single_question_prompt)
-                response_text = str(response)
+                response_text = self.get_ai_response(single_question_prompt)
                 
                 # Extract question and solution
                 question_match = re.search(r'Question:?\s*(.*?)(?=Solution:|$)', response_text, re.DOTALL)

@@ -1,38 +1,49 @@
 import os
-from hugchat import hugchat
-from hugchat.login import Login
+from openai import OpenAI
 import json
 import sys
 import time
 
 class MathQuestionGenerator:
     def __init__(self):
-        self.email = "harisgul031@gmail.com"
-        self.password = "HcestLavie123@@"
-        self.cookie_path = os.path.join(os.path.dirname(__file__), 'cookies')
+        self.api_key = "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"
         self.max_retries = 3
+        self.client = None
 
-    def setup_chatbot(self):
+    def setup_openai_client(self):
         try:
-            os.makedirs(self.cookie_path, exist_ok=True)
-            sign = Login(self.email, self.password)
-            cookies = sign.login(cookie_dir_path=self.cookie_path, save_cookies=True)
-            self.chatbot = hugchat.ChatBot(cookies=cookies.get_dict())
-            self.chatbot.new_conversation()
+            self.client = OpenAI(api_key=self.api_key)
             return True
         except Exception as e:
             print(json.dumps({"error": f"Setup error: {str(e)}"}), file=sys.stderr)
             return False
 
+    def get_ai_response(self, prompt):
+        """Get response from OpenAI GPT"""
+        try:
+            response = self.client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": "You are an expert mathematics instructor. Generate clear, well-structured math questions with step-by-step solutions. Use plain text format without LaTeX."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=2000,
+                temperature=0.7
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            print(f"OpenAI API error: {str(e)}", file=sys.stderr)
+            raise e
+
     def generate_questions(self, prompt, num_questions):
         try:
-            if not self.setup_chatbot():
-                raise Exception("Failed to initialize chatbot")
+            if not self.setup_openai_client():
+                raise Exception("Failed to initialize OpenAI client")
 
             # Modified prompt to explicitly request questions and solutions
             modified_prompt = (
-                f"Generate {num_questions} mathematics questions about {prompt} in plain text and mathematical format and use math notations and signs where required dont include latex fromat in it. "
-                "For each question, provide its solution in mathametical format. "
+                f"Generate {num_questions} mathematics questions about {prompt} in plain text and mathematical format and use math notations and signs where required dont include latex format in it. "
+                "For each question, provide its solution in mathematical format. "
                 "Format as follows:\n"
                 "Question 1: [question text]\n"
                 "Solution 1: [step by step solution]\n"
@@ -40,12 +51,11 @@ class MathQuestionGenerator:
             )
 
             try:
-                response = self.chatbot.chat(modified_prompt)
-                if not response:
-                    raise Exception("Empty response from chatbot")
-                response_text = str(response)
+                response_text = self.get_ai_response(modified_prompt)
+                if not response_text:
+                    raise Exception("Empty response from OpenAI")
             except Exception as e:
-                raise Exception(f"Chat error: {str(e)}")
+                raise Exception(f"API error: {str(e)}")
 
             # Parse questions and solutions
             questions_and_solutions = []

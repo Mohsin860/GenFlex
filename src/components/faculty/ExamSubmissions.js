@@ -44,11 +44,13 @@ import {
     ButtonGroup,
     Tooltip,
     Grid,
+    Stack
 } from '@chakra-ui/react';
 import { getExamSubmissions, publishAllResults, deleteAllSubmissions } from '../../services/teacherExamService';
 import { evaluateAllSubmissions, evaluateAllMathSubmissions, evaluateAllCodingSubmissions } from '../../services/evaluationService';
+import { checkExamPlagiarism } from '../../services/plagiarismService';
 import { ChevronLeftIcon } from '@chakra-ui/icons';
-import { FaRocket, FaBullhorn, FaTrash, FaEye, FaCheck, FaTimes, FaCode } from 'react-icons/fa';
+import { FaRocket, FaBullhorn, FaTrash, FaEye, FaCheck, FaTimes, FaCode, FaShieldAlt } from 'react-icons/fa';
 
 const ExamSubmissions = () => {
     const { examType, examId } = useParams();
@@ -57,6 +59,8 @@ const ExamSubmissions = () => {
     const [loading, setLoading] = useState(true);
     const [evaluating, setEvaluating] = useState(false);
     const [publishing, setPublishing] = useState(false);
+    const [checkingPlagiarism, setCheckingPlagiarism] = useState(false);
+    const [plagiarismResult, setPlagiarismResult] = useState(null);
     const [error, setError] = useState(null);
     const navigate = useNavigate();
     const toast = useToast();
@@ -70,6 +74,11 @@ const ExamSubmissions = () => {
         isOpen: isDeleteOpen,
         onOpen: onDeleteOpen,
         onClose: onDeleteClose
+    } = useDisclosure();
+    const {
+        isOpen: isPlagiarismOpen,
+        onOpen: onPlagiarismOpen,
+        onClose: onPlagiarismClose
     } = useDisclosure();
 
     // Color mode values
@@ -211,6 +220,7 @@ const ExamSubmissions = () => {
             setEvaluating(false);
         }
     };
+
     const handlePublishAllResults = async () => {
         try {
             setPublishing(true);
@@ -266,6 +276,35 @@ const ExamSubmissions = () => {
             });
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handlePlagiarismCheck = async () => {
+        try {
+            setCheckingPlagiarism(true);
+            const result = await checkExamPlagiarism(examType, examId);
+
+            setPlagiarismResult(result);
+            
+            toast({
+                title: 'Plagiarism Check Complete',
+                description: result.message,
+                status: 'success',
+                duration: 5000,
+                isClosable: true,
+            });
+
+            onPlagiarismClose();
+        } catch (error) {
+            toast({
+                title: 'Plagiarism Check Failed',
+                description: error.response?.data?.message || 'Failed to run plagiarism check',
+                status: 'error',
+                duration: 5000,
+                isClosable: true,
+            });
+        } finally {
+            setCheckingPlagiarism(false);
         }
     };
 
@@ -408,7 +447,6 @@ const ExamSubmissions = () => {
                             <>
                                 <Flex mb={6} wrap="wrap" gap={4} justify={{ base: "center", md: "flex-start" }}>
                                     {/* Evaluate All Pending Submissions button */}
-                                    {/* Evaluate All Pending Submissions button */}
                                     {(isEssayExam ||
                                         (examType === 'CodingExam' && exam.type === 'math') ||
                                         (examType === 'CodingExam' && ['coding', 'complex', 'diverse'].includes(exam.type))) &&
@@ -425,6 +463,21 @@ const ExamSubmissions = () => {
                                                 Evaluate All Pending Submissions ({pendingSubmissions})
                                             </Button>
                                         )}
+
+                                    {/* Plagiarism Check button (only for coding exams) */}
+                                    {examType === 'CodingExam' && submissions.length >= 2 && (
+                                        <Button
+                                            colorScheme="red"
+                                            onClick={onPlagiarismOpen}
+                                            leftIcon={<Icon as={FaShieldAlt} />}
+                                            size="md"
+                                            boxShadow="md"
+                                            _hover={{ boxShadow: "lg", transform: "translateY(-1px)" }}
+                                            transition="all 0.2s"
+                                        >
+                                            Check Plagiarism ({submissions.length} submissions)
+                                        </Button>
+                                    )}
 
                                     {/* Publish All Results button */}
                                     {isEssayExam && unpublishedSubmissions > 0 && (
@@ -511,6 +564,49 @@ const ExamSubmissions = () => {
                                     </TableContainer>
                                 </Box>
                             </>
+                        )}
+
+                        {/* Plagiarism Results Section */}
+                        {plagiarismResult && (
+                            <Box mt={8} p={6} bg={accentBg} borderRadius="md" boxShadow="md">
+                                <Heading size="md" mb={4} color="red.600">
+                                    <Icon as={FaShieldAlt} mr={2} />
+                                    Plagiarism Check Results
+                                </Heading>
+                                <Stack spacing={3}>
+                                    <HStack>
+                                        <Text fontWeight="bold">Checked Submissions:</Text>
+                                        <Badge colorScheme="blue">{plagiarismResult.submissionCount}</Badge>
+                                    </HStack>
+                                    <HStack>
+                                        <Text fontWeight="bold">Check Date:</Text>
+                                        <Text>{formatDate(plagiarismResult.checkedAt)}</Text>
+                                    </HStack>
+                                    <HStack>
+                                        <Text fontWeight="bold">MOSS Report:</Text>
+                                        <Button
+                                            as="a"
+                                            href={plagiarismResult.resultUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            colorScheme="red"
+                                            size="sm"
+                                            leftIcon={<Icon as={FaEye} />}
+                                        >
+                                            View Detailed Report
+                                        </Button>
+                                    </HStack>
+                                    <Alert status="info" borderRadius="md">
+                                        <AlertIcon />
+                                        <Box>
+                                            <Text fontSize="sm">
+                                                <strong>Note:</strong> The MOSS report shows similarity percentages between submissions. 
+                                                High similarity doesn't necessarily indicate plagiarism - review the code manually for context.
+                                            </Text>
+                                        </Box>
+                                    </Alert>
+                                </Stack>
+                            </Box>
                         )}
                     </CardBody>
                 </Card>
@@ -644,6 +740,71 @@ const ExamSubmissions = () => {
                             leftIcon={<Icon as={FaTrash} />}
                         >
                             Delete All
+                        </Button>
+                    </ModalFooter>
+                </ModalContent>
+            </Modal>
+
+            {/* Plagiarism Check Confirmation Modal */}
+            <Modal isOpen={isPlagiarismOpen} onClose={onPlagiarismClose}>
+                <ModalOverlay />
+                <ModalContent>
+                    <ModalHeader>
+                        <HStack>
+                            <Icon as={FaShieldAlt} color="red.500" />
+                            <Text>Run Plagiarism Check</Text>
+                        </HStack>
+                    </ModalHeader>
+                    <ModalCloseButton />
+                    <ModalBody>
+                        <Stack spacing={4}>
+                            <Text>
+                                This will run MOSS (Measure of Software Similarity) plagiarism detection on all {submissions.length} 
+                                coding submissions for this exam.
+                            </Text>
+                            <Alert status="info" borderRadius="md">
+                                <AlertIcon />
+                                <Box>
+                                    <Text fontSize="sm">
+                                        <strong>How it works:</strong>
+                                    </Text>
+                                    <Text fontSize="sm" mt={1}>
+                                        • All student code will be compared against each other
+                                    </Text>
+                                    <Text fontSize="sm">
+                                        • A similarity report will be generated by Stanford's MOSS system
+                                    </Text>
+                                    <Text fontSize="sm">
+                                        • You'll get a detailed web report showing potential similarities
+                                    </Text>
+                                </Box>
+                            </Alert>
+                            <Alert status="warning" borderRadius="md">
+                                <AlertIcon />
+                                <Text fontSize="sm">
+                                    This process may take 1-2 minutes to complete. The check will run on your local MOSS setup.
+                                </Text>
+                            </Alert>
+                        </Stack>
+                    </ModalBody>
+
+                    <ModalFooter>
+                        <Button
+                            colorScheme="gray"
+                            mr={3}
+                            onClick={onPlagiarismClose}
+                            leftIcon={<Icon as={FaTimes} />}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            colorScheme="red"
+                            onClick={handlePlagiarismCheck}
+                            isLoading={checkingPlagiarism}
+                            loadingText="Checking Plagiarism..."
+                            leftIcon={<Icon as={FaShieldAlt} />}
+                        >
+                            Run Check
                         </Button>
                     </ModalFooter>
                 </ModalContent>
